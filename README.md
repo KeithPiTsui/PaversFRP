@@ -106,12 +106,12 @@ public func curry<A, B, C>(_ function: @escaping (A, B) -> C) -> (A) -> (B) -> C
 
 Initial Object is a type that for every type in Swift, there is a unique function from initial object to that type.
 
-The initial object is `Void` in Swift, and its isomorphic types, like `()`, struct wrapped `()`.
+The initial object is `Never` in Swift, and its isomorphic types, like no case enum.
 
 
 Terminal Object is a type that for every type in Swift, there is a unique function from that type to terminal object.
 
-The terminal object is `Never` in Swift, and its isomorphic types, like no case enum.
+The terminal object is `Void` in Swift, and its isomorphic types, like `()`, struct wrapped `()`.
 
 # Maths Concept in Swift
 Using a maths concept to capture a behavioral pattern of a type, that can make that pattern more explicit and reuse the pattern more conveniently.
