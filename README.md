@@ -6,10 +6,6 @@ Some codes is from other repositories in github, I will provide a link to that r
 
 Most of ideas has Haskell or other FP language counterpart. To start introduce this framework, I would recommend the user to have a look my article about [Type Theory in Swift](https://keithpitsui.github.io/TypeTheoryInSwift/TypeTheoryInSwift.html).
 
-
-## Table of Contents
-
-
 # Type Features
 
 There are some different kinds of types having their counterpart in Swift.
