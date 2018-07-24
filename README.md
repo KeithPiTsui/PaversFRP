@@ -25,7 +25,7 @@ Different kind of type would have different property to facilitate solution of s
 
 # Laziness
 
-Another important feature that FP would have is laziness. Laziness means delay evaluation until its value is needed. And Swift is an eager evaluation language, that is when you pass an expression to a function call, the expression would be evaluated first, then pass the value to that function as an argument. Therefore to implement laziness in Swift, we need `function` or `closure`, (`exponential type`), to wrap the expression. In other words, tell me how to generate the value when needed instead of give me the exact value.
+Another important feature that FP would have is laziness. Laziness means delay evaluation until its value is needed. And Swift is an eager evaluation language, that is when you pass an expression to a function call, the expression would be evaluated first, then pass the resulted value to that function as an argument. Therefore to implement laziness in Swift, we need `function` or `closure`, (`exponential type`), to wrap the expression. In other words, tell me how to generate the value when needed instead of give me the exact value.
 
 The following is an example to take advantage of Laziness in Swift.
 
@@ -33,7 +33,7 @@ In Haskell, The fibonacci sequence is calculated by:
 ```haskell
 fibs = 0 : 1 : zipWith (+) fibs (tail fibs)
 ```
-Because Haskell is a lazy langauge, it only partially evaluate the expression when it needs to. ([WHNF](https://wiki.haskell.org/Weak_head_normal_form))
+Because Haskell is a lazy langauge, it only partially evaluate the expression when it needs to. (evaluate up to [WHNF](https://wiki.haskell.org/Weak_head_normal_form))
 
 Another feature of Haskell makes that expression efficient is function value cache, that is if using the same argument to call the same function, it will return the cached value after its first call.
 
@@ -139,20 +139,6 @@ public protocol Monoid: Semigroup {
 }
 ```
 
-## NumericType
-```swift
-/// A `NumericType` instance is something that acts numeric-like, i.e. can be added, subtracted
-/// and multiplied with other numeric types.
-public protocol NumericType {
-  static func + (lhs: Self, rhs: Self) -> Self
-  static func - (lhs: Self, rhs: Self) -> Self
-  static func * (lhs: Self, rhs: Self) -> Self
-  func negate() -> Self
-  static func zero() -> Self
-  static func one() -> Self
-  init(_ v: Int)
-}
-```
 ## Functor
 A type that is Funcotr would behave as a primitive context that wraps a value inside its context. 
 So it has fmap function that change the value living in that context.
@@ -213,6 +199,121 @@ public func >>- <T, U>(a: T?, f: (T) -> U?) -> U? {
   return a.flatMap(f)
 }
 ```
+
+## Higher Kinded Type (Just for experiment)
+Simulating Higher Kinded Type in Swift by using Swift Type system to abstract Functor, Applicative and Monad in terms of Protocol, so that let types of those abstraction conform to responding protocol.
+
+The simulating mechanism is using a structure to keep the type info of context wrapped type, when needing to unwrap the value of wrapped type, using that info to get that value of a specific type instead of Any. 
+
+```swift
+/// * -> *
+/// tell what the type is in the HKTValueKeeper
+public struct HKT_TypeParameter_Binder <HKTValueKeeper, HKTArgumentType> {
+  let valueKeeper: HKTValueKeeper
+}
+public typealias HKT<F, A> = HKT_TypeParameter_Binder <F, A>
+
+/// A protocol all type constructors must conform to.
+/// * -> *
+public protocol HKTConstructor {
+  /// The existential type that erases `Argument`.
+  /// This should only be initializable with values of types created by the current constructor.
+  associatedtype HKTValueKeeper
+  /// The argument that is currently applied to the type constructor in `Self`.
+  associatedtype A
+  var typeBinder: HKT_TypeParameter_Binder<HKTValueKeeper, A> { get }
+  static func putIntoBinder(with value: Self) -> HKT_TypeParameter_Binder<HKTValueKeeper, A>
+  static func extractValue(from binder: HKT_TypeParameter_Binder<HKTValueKeeper, A>) -> Self
+}
+
+extension HKTConstructor {
+  public var typeBinder: HKT_TypeParameter_Binder<HKTValueKeeper, A> {
+    return Self.putIntoBinder(with: self)
+  }
+}
+
+
+```
+
+Based on the above mechanism, we can abstract the functor, applicative and monad concept in Protocol.
+```swift
+/// fmap :: (a -> b) -> f a -> f b
+public protocol Functor: HKTConstructor {
+  typealias F = HKTValueKeeper
+  static func fmap<B>(f: (A) -> B, fa: HKT<F, A>) -> HKT<F, B>
+}
+
+
+/// pure :: a -> f a
+/// apply :: f (a -> b) -> f a -> f b
+public protocol Applicative: Functor {
+  static func pure(a: A) -> HKT<F, A>
+  static func apply<B>(f: HKT<F, (A) -> B>, fa: HKT<F, A>) -> HKT<F, B>
+}
+
+
+/// return :: a -> m a
+/// bind :: m a -> (a -> m b) -> m b
+public protocol Monad: Applicative {
+  typealias M = HKTValueKeeper
+  static var `return`: (A) -> HKT<M, A> {get}
+  static func bind<B> (ma: HKT<M, A>, f: (A) -> HKT<M, B>) -> HKT<M, B>
+}
+
+extension Monad {
+  public static var `return`: (A) -> HKT<M, A> {return pure}
+}
+```
+
+Then we have an example of Array to conform those protocol as following:
+```swift
+public struct ArrayValueKeeper {
+  public let value: Any
+  init<T>(_ array: [T]) { self.value = array}
+}
+
+extension Array: HKTConstructor {
+  
+  public typealias HKTValueKeeper = ArrayValueKeeper
+  
+  public static func putIntoBinder(with value: Array<Element>) -> HKT_TypeParameter_Binder<HKTValueKeeper, Element> {
+    return HKT_TypeParameter_Binder<HKTValueKeeper, Element>(valueKeeper: HKTValueKeeper(value))
+  }
+  
+  public static func extractValue(from typeBinder: HKT_TypeParameter_Binder<HKTValueKeeper, Element>) -> Array {
+    return typeBinder.valueKeeper.value as! Array<Element>
+  }
+}
+
+extension Array: Functor {
+  public static func fmap<B>(f: (Element) -> B, fa: HKT_TypeParameter_Binder<HKTValueKeeper, Element>) -> HKT_TypeParameter_Binder<HKTValueKeeper, B> {
+    return extractValue(from:fa).map(f).typeBinder
+  }
+}
+
+extension Array: Applicative {
+  public static func pure(a: Element) -> HKT_TypeParameter_Binder<HKTValueKeeper, Element> {
+    return [a].typeBinder
+  }
+  
+  public static func apply<B>(f: HKT_TypeParameter_Binder<ArrayValueKeeper, (Element) -> B>, fa: HKT_TypeParameter_Binder<ArrayValueKeeper, Element>)
+    -> HKT_TypeParameter_Binder<ArrayValueKeeper, B> {
+      let fs = Array<(Element) -> B>.extractValue(from: f)
+      let fas = Array<Element>.extractValue(from: fa)
+      let fbs = fs.flatMap{ fas.map($0) }
+      return fbs.typeBinder
+  }
+}
+
+extension Array: Monad {
+  public static func bind<B>
+    (ma: HKT_TypeParameter_Binder<ArrayValueKeeper, Element>, f: (Element) -> HKT_TypeParameter_Binder<ArrayValueKeeper, B>)
+    -> HKT_TypeParameter_Binder<ArrayValueKeeper, B> {
+      return extractValue(from: ma).map(f).flatMap{Array<B>.extractValue(from: $0)}.typeBinder
+  }
+}
+```
+
 
 # Notice
 There are more inside this framework, and documentation of each API of this framework would stay in source file.
