@@ -8,7 +8,6 @@
 
 public struct Identity<A> {
   public let a: A
-  
 }
 
 public struct IdentityTypeConstructor {

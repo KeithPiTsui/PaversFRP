@@ -11,8 +11,6 @@ public struct ArrayValueKeeper {
   init<T>(_ array: [T]) { self.value = array}
 }
 
-
-
 extension Array: HKTConstructor {
   
   public typealias HKTValueKeeper = ArrayValueKeeper

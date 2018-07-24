@@ -6,8 +6,6 @@
 //  Copyright © 2018 Keith. All rights reserved.
 //
 
-import PaversFRP
-
 /// * -> *
 /// tell what the type is in the HKTValueKeeper
 public struct HKT_TypeParameter_Binder <HKTValueKeeper, HKTArgumentType> {
