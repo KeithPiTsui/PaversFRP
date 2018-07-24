@@ -233,4 +233,9 @@ Adding the following package dependency into your project.
 1. Copy the ./Source/PaversFRP folder and its contents into your project, and use the source files.
 2. Or clone thise repo, then use Swift package manager to generate its xcode project file, and import that xcode project into your own project.
 
+# The origin of Some Code
+
+## Operators is heavily borrowed from [Rune](https://github.com/thoughtbot/Runes)
+
+## The primitive idea and code is heavily borrowed from [Kickstarter-Prelude](https://github.com/kickstarter/Kickstarter-Prelude)
 
