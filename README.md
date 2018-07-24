@@ -113,15 +113,124 @@ Terminal Object is a type that for every type in Swift, there is a unique functi
 
 The terminal object is `Void` in Swift, and its isomorphic types, like `()`, struct wrapped `()`.
 
+One usage of terminal object in this framework is to ignore value when the value is not needed.
+
+```swift
+public func terminal<A>(_ x: A) -> () {
+  return ()
+}
+```
+
 # Maths Concept in Swift
-Using a maths concept to capture a behavioral pattern of a type, that can make that pattern more explicit and reuse the pattern more conveniently.
+Using a maths concept to capture a common behavioral pattern of a type, that can make that pattern more explicit and reuse the pattern more conveniently.
 
 ## Semigroup
+```swift
+/// A type is a Semigroup if it has an associative, binary operation.
+public protocol Semigroup {
+  /// An associative operation, i.e. a.op(b.op(c)) == (a.op(b)).op(c)
+  func op(_ other: Self) -> Self
+}
+```
 
 ## Monoid
-
-## EitherType
+```swift
+/// A type is `Monoid` if it is `Semigroup` with an identity that
+/// combine this identity with other value of this type would
+/// result to that value.
+public protocol Monoid: Semigroup {
+  static func identity () -> Self
+}
+```
 
 ## NumericType
+```swift
+/// A `NumericType` instance is something that acts numeric-like, i.e. can be added, subtracted
+/// and multiplied with other numeric types.
+public protocol NumericType {
+  static func + (lhs: Self, rhs: Self) -> Self
+  static func - (lhs: Self, rhs: Self) -> Self
+  static func * (lhs: Self, rhs: Self) -> Self
+  func negate() -> Self
+  static func zero() -> Self
+  static func one() -> Self
+  init(_ v: Int)
+}
+```
+## Functor
+A type that is Funcotr would behave as a primitive context that wraps a value inside its context. 
+So it has fmap function that change the value living in that context.
+
+Array as Functor
+```swift
+public func <^> <T, U>(f: (T) -> U, a: [T]) -> [U] {
+  return a.map(f)
+}
+```
+
+Optional as Funcotr
+```swift
+public func <^> <T, U>(f: (T) -> U, a: T?) -> U? {
+  return a.map(f)
+}
+```
+
+## Applicative
+A type that is Applicative would be a Funcotr, 
+at the same time when a function live in that applicative context, 
+that function can be applied with a value which live in the same context. 
+In addition, there would be a function for an applicative type to lift any value into the applicative context.
+
+```swift
+public func <*> <T, U>(fs: [(T) -> U], a: [T]) -> [U] {
+  return a.apply(fs)
+}
+public func pure<T>(_ a: T) -> [T] {
+  return [a]
+}
+```
+
+Optional as Applicative
+```swift
+public func <*> <T, U>(f: ((T) -> U)?, a: T?) -> U? {
+  return a.apply(f)
+}
+public func pure<T>(_ a: T) -> T? {
+  return .some(a)
+}
+```
+
+## Monad
+A type that is Monad would be an Applicative,
+at the same time with a bind function to expend its contextual power, that make that following function contextual sensitive.
+
+Array as Monad
+```swift
+public func >>- <T, U>(a: [T], f: (T) -> [U]) -> [U] {
+  return a.flatMap(f)
+}
+```
+
+Optional as Monad
+```swift
+public func >>- <T, U>(a: T?, f: (T) -> U?) -> U? {
+  return a.flatMap(f)
+}
+```
+
+# Notice
+There are more inside this framework, and documentation of each API of this framework would stay in source file.
+
+# How to use
+
+## Swift Package Manager
+Adding the following package dependency into your project.
+```swift
+.package(url: "https://github.com/KeithPiTsui/PaversFRP.git", from: "1.0.0"),
+```
+
+## Manual
+1. Copy the ./Source/PaversFRP folder and its contents into your project, and use the source files.
+2. Or clone thise repo, then use Swift package manager to generate its xcode project file, and import that xcode project into your own project.
 
 
