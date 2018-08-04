@@ -10,7 +10,7 @@ Most of ideas has Haskell or other FP language counterpart. To start introduce t
 
 There are some different kinds of types having their counterpart in Swift.
 
-`Some Type`, the counterpart in Swift is `enum`.
+`Sum Type`, the counterpart in Swift is `enum`.
 
 `Product Type`, the counterpart in Swift is `tuple` and `struct`.
 
